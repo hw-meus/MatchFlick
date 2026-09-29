@@ -1,0 +1,7 @@
+# Minimal konfiguration til Supabase CLI. Projektet kører kun i skyen (ingen lokal Supabase).
+project_id = "ecqqptlliylrdpggryur"
+
+[functions.tmdb]
+# Funktionen tjekker selv brugerens session (admin.auth.getUser), så den også virker
+# med de nye publishable-nøgler, hvor den indbyggede JWT-kontrol ikke passer.
+verify_jwt = false

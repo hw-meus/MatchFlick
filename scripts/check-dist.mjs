@@ -40,8 +40,10 @@ for (const path of files(DIST)) {
   if (/service_role/.test(text)) problems.push(`${path}: indeholder teksten "service_role"`)
   if (/sb_secret_[A-Za-z0-9_-]+/.test(text)) problems.push(`${path}: indeholder en hemmelig Supabase-nøgle (sb_secret_)`)
 
-  // TMDB's v3-nøgle er 32 hextegn.
+  // TMDB's v3-nøgle er 32 tilfældige hextegn. Strenge med få forskellige tegn
+  // (fx 32 nuller i supabase-js) er ikke nøgler og springes over.
   for (const m of text.matchAll(/(?<![0-9a-f])[0-9a-f]{32}(?![0-9a-f])/g)) {
+    if (new Set(m[0]).size < 8) continue
     problems.push(`${path}: ligner en TMDB API-nøgle (${m[0].slice(0, 4)}…)`)
   }
 
