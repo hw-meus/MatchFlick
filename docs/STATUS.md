@@ -26,9 +26,8 @@ Opgavebeskrivelsen ligger i `docs/opgavebeskrivelse.md`.
 
 - [x] **Fase 1 – opsætning:** Vite + React + TypeScript, hash-routing, `.env.example`, deploy-workflow med `check-dist`, README. Deployet og virker.
 - [ ] **Fase 2 – grundfase:** login med e-mail-OTP (6 cifre), parkobling med invitationskode, swipe-kort via Edge Function mod TMDB, matchtrigger, Realtime, watch list. Kø = populære titler i DK.
-  Koden er skrevet (migration, Edge Function `tmdb`, frontend, RLS-test) og afprøvet lokalt: RLS-testen består mod lokal PostgreSQL,
-  og brugerfladen er afprøvet i Chromium mod en attrap af Supabase. **Mangler:** migrationen skal køres i Supabase, Edge Functionen udrulles,
-  e-mailskabelonen tjekkes, og Meus skal afprøve med to telefoner.
+  Migrationen er kørt i Supabase, RLS-testen består mod den rigtige database, og Edge Functionen `tmdb` er udrullet (uden JWT-kontrol).
+  Koden er pushet til `main` med Meus' accept. **Mangler:** e-mailskabelonerne (se nedenfor), og Meus skal afprøve med to telefoner og godkende.
 - [ ] **Fase 3 – læring**
 - [ ] **Fase 4 – PWA**
 - [ ] **Fase 5 – statistik**
@@ -36,7 +35,9 @@ Opgavebeskrivelsen ligger i `docs/opgavebeskrivelse.md`.
 ## Åbne punkter
 
 - Fase 1 er godkendt af Meus.
-- Supabase-e-mailskabelonen for login skal vise koden (`{{ .Token }}`) i stedet for et link. Tjek/ændr det i fase 2.
-- I fase 2-sessionen afviste Claudes tilladelsessystem kald til Supabases Management API med `SUPABASE_ACCESS_TOKEN`, så migration og udrulning ikke kunne køres derfra.
-  Enten kører Meus migrationen i SQL-editoren og udruller funktionen, eller også tillader Meus kaldene i en ny session.
+- `SUPABASE_ACCESS_TOKEN` må (med Meus' accept) bruges til SQL via Management API og til `supabase functions deploy --use-api`.
+  Tokenet mangler rettigheden `project_admin_write`, så login-indstillinger (e-mailskabeloner, kodelængde) skal Meus selv ændre.
+- Login-indstillinger, som Meus skal rette: kodelængde 6 (stod til 8), og skabelonerne *Magic Link* og *Confirm signup* skal vise `{{ .Token }}`
+  i stedet for `{{ .ConfirmationURL }}`. Site URL bør være https://hw-meus.github.io/MatchFlick/.
+- Supabases indbyggede e-mail sender højst 2 mails i timen. Bliver det et problem, skal der opsættes egen SMTP.
 - Watch listen sorterer i fase 2 efter dato eller TMDB-bedømmelse. Sortering efter forventet fælles glæde kommer med modellen i fase 3.
