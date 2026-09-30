@@ -30,7 +30,7 @@ Opgavebeskrivelsen ligger i `docs/opgavebeskrivelse.md`.
 - [x] **Fase 1 – opsætning:** Vite + React + TypeScript, hash-routing, `.env.example`, deploy-workflow med `check-dist`, README. Deployet og virker.
 - [ ] **Fase 2 – grundfase:** login med e-mail-OTP (6 cifre), parkobling med invitationskode, swipe-kort via Edge Function mod TMDB, matchtrigger, Realtime, watch list. Kø = populære titler i DK.
   Migrationen er kørt i Supabase, RLS-testen består mod den rigtige database, og Edge Functionen `tmdb` er udrullet (uden JWT-kontrol).
-  Koden er pushet til `main` med Meus' accept. **Mangler:** e-mailskabelonerne (se nedenfor), og Meus skal afprøve med to telefoner og godkende.
+  Koden er pushet til `main` med Meus' accept. **Mangler:** Meus skal afprøve med to telefoner og godkende.
 - [ ] **Fase 3 – læring**
 - [ ] **Fase 4 – PWA**
 - [ ] **Fase 5 – statistik**
@@ -40,7 +40,7 @@ Opgavebeskrivelsen ligger i `docs/opgavebeskrivelse.md`.
 - Fase 1 er godkendt af Meus.
 - `SUPABASE_ACCESS_TOKEN` må (med Meus' accept) bruges til SQL via Management API og til `supabase functions deploy --use-api`.
   Tokenet mangler rettigheden `project_admin_write`, så login-indstillinger (e-mailskabeloner, kodelængde) skal Meus selv ændre.
-- Kodelængde (6) og Site URL er rettet af Meus. Supabase kræver egen SMTP for at ændre e-mailskabeloner på gratisniveau;
-  Meus opsætter Gmail-SMTP (smtp.gmail.com, port 587, app-adgangskode). Derefter skal skabelonerne *Magic Link* og *Confirm signup* vise `{{ .Token }}`
-  i stedet for `{{ .ConfirmationURL }}`.
+- Login-e-mail er sat op: Gmail-SMTP (smtp.gmail.com:587, app-adgangskode, afsendernavn MatchFlick), kodelængde 6,
+  Site URL https://hw-meus.github.io/MatchFlick/, og skabelonerne *Magic Link* og *Confirm signup* viser `{{ .Token }}` på dansk.
+  Grænsen er 30 e-mails i timen. Supabase advarer om, at Gmail er beregnet til personlig e-mail; det er fint for to brugere.
 - Watch listen sorterer i fase 2 efter dato eller TMDB-bedømmelse. Sortering efter forventet fælles glæde kommer med modellen i fase 3.
