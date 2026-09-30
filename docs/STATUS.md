@@ -7,7 +7,10 @@ Opgavebeskrivelsen ligger i `docs/opgavebeskrivelse.md`.
 
 - Arbejd fase for fase, og stop efter hver fase, så Meus kan afprøve og godkende.
 - Udvikl på den gren, sessionen får tildelt (fase 1: `claude/lag-denne-app-5s1bw2`, fase 2: `claude/dreamy-knuth-68sjam`). Når en fase er godkendt, må ændringerne pushes direkte til `main`, som deployer til GitHub Pages.
-- Svar og skriv på dansk. Beskriv, hvad Meus skal lede efter i webgrænseflader, frem for præcise klikforløb.
+- Svar og skriv på dansk.
+- Vejledninger til Meus skal altid være udførlige: en overskrift pr. opgave, direkte links til de relevante sider (fx i Supabase-dashboardet),
+  nummererede trin for trin og tekst, der kan kopieres, i kodeblokke. Nævn feltnavne, som de står på skærmen, og bed Meus sige til,
+  hvis en side ser anderledes ud (grænsefladerne ændrer sig).
 - Bed aldrig Meus om at indsætte nøgler eller adgangskoder i chatten.
 
 ## Opsætning
@@ -37,7 +40,7 @@ Opgavebeskrivelsen ligger i `docs/opgavebeskrivelse.md`.
 - Fase 1 er godkendt af Meus.
 - `SUPABASE_ACCESS_TOKEN` må (med Meus' accept) bruges til SQL via Management API og til `supabase functions deploy --use-api`.
   Tokenet mangler rettigheden `project_admin_write`, så login-indstillinger (e-mailskabeloner, kodelængde) skal Meus selv ændre.
-- Login-indstillinger, som Meus skal rette: kodelængde 6 (stod til 8), og skabelonerne *Magic Link* og *Confirm signup* skal vise `{{ .Token }}`
-  i stedet for `{{ .ConfirmationURL }}`. Site URL bør være https://hw-meus.github.io/MatchFlick/.
-- Supabases indbyggede e-mail sender højst 2 mails i timen. Bliver det et problem, skal der opsættes egen SMTP.
+- Kodelængde (6) og Site URL er rettet af Meus. Supabase kræver egen SMTP for at ændre e-mailskabeloner på gratisniveau;
+  Meus opsætter Gmail-SMTP (smtp.gmail.com, port 587, app-adgangskode). Derefter skal skabelonerne *Magic Link* og *Confirm signup* skal vise `{{ .Token }}`
+  i stedet for `{{ .ConfirmationURL }}`.
 - Watch listen sorterer i fase 2 efter dato eller TMDB-bedømmelse. Sortering efter forventet fælles glæde kommer med modellen i fase 3.
