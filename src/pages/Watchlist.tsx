@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Providers } from '../components/SwipeCard'
+import { OriginalTitle, Providers } from '../components/SwipeCard'
 import { Stars } from '../components/RatingDialog'
 import { loadMatches, rateMatch, setMatchStatus } from '../lib/api'
 import { danishError } from '../lib/errors'
@@ -145,6 +145,7 @@ export function Watchlist({ userId, couple, version }: Props) {
                   <h3>
                     {md.title} {md.year && <span className="muted">({md.year})</span>}
                   </h3>
+                  <OriginalTitle metadata={md} />
                   <p className="meta">
                     {[typeLabel(md.media_type), lengthLabel(md), md.genres.slice(0, 3).join(', ')].filter(Boolean).join(' · ')}
                   </p>

@@ -163,7 +163,6 @@ label.check input { width: 1.2rem; height: 1.2rem; accent-color: var(--accent); 
 .stamp-superlike { color: var(--super); }
 
 .info { padding: 0.9rem 1rem 1rem; max-height: 55%; overflow-y: auto; }
-.info.scrollable { touch-action: pan-y; }
 .info h2 { margin: 0 0 0.25rem; font-size: 1.25rem; }
 .meta { margin: 0 0 0.5rem; color: var(--muted); font-size: 0.9rem; }
 .overview {
@@ -175,7 +174,24 @@ label.check input { width: 1.2rem; height: 1.2rem; accent-color: var(--accent); 
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.overview.expanded { -webkit-line-clamp: unset; }
+.original-title { margin: -0.15rem 0 0.35rem; color: var(--muted); font-size: 0.85rem; font-style: italic; }
+.read-more { font-size: 0.9rem; margin-bottom: 0.5rem; }
+
+/* Hele resuméet i et vindue nedefra, som kan rulles */
+.sheet-backdrop { position: fixed; inset: 0; background: rgb(0 0 0 / 0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 10; }
+.sheet {
+  background: var(--surface);
+  width: 100%;
+  max-width: 32rem;
+  max-height: 85dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 1rem 1rem 0 0;
+  padding: 1.25rem 1.25rem max(1.25rem, env(safe-area-inset-bottom));
+}
+.sheet h2 { margin: 0 0 0.25rem; font-size: 1.25rem; }
+.sheet p { line-height: 1.5; }
+.sheet .row { justify-content: space-between; margin-top: 1rem; }
 
 .providers { display: flex; flex-wrap: wrap; gap: 0.4rem; list-style: none; padding: 0; margin: 0.25rem 0 0; font-size: 0.85rem; }
 .providers li img { width: 2rem; height: 2rem; border-radius: 0.4rem; display: block; }

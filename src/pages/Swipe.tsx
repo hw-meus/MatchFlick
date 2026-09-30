@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { SwipeCard, type Gesture } from '../components/SwipeCard'
 import { RatingDialog } from '../components/RatingDialog'
+import { DetailsSheet } from '../components/DetailsSheet'
 import { fetchQueue, saveSwipe, snooze } from '../lib/api'
 import { danishError } from '../lib/errors'
 import { imageUrl } from '../lib/tmdb'
@@ -19,6 +20,7 @@ export function Swipe({ userId }: { userId: string }) {
   const [error, setError] = useState<string | null>(null)
   const [leaving, setLeaving] = useState<Gesture | null>(null)
   const [rating, setRating] = useState<Title | null>(null)
+  const [details, setDetails] = useState<Title | null>(null)
   const fetching = useRef(false)
   // Alle titler, der er vist i denne session, så de ikke kommer igen, før swipet er gemt.
   const seen = useRef(new Set<string>())
@@ -95,7 +97,7 @@ export function Swipe({ userId }: { userId: string }) {
   // Piletaster på computer.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (rating || (e.target as HTMLElement).closest('input, textarea, select')) return
+      if (rating || details || (e.target as HTMLElement).closest('input, textarea, select')) return
       const map: Record<string, Choice> = { ArrowRight: 'like', ArrowLeft: 'nope', ArrowUp: 'seen', ArrowDown: 'snooze', s: 'superlike' }
       const choice = map[e.key]
       if (choice) {
@@ -105,7 +107,7 @@ export function Swipe({ userId }: { userId: string }) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [next, rating])
+  }, [next, rating, details])
 
   return (
     <div className="swipe">
@@ -116,7 +118,7 @@ export function Swipe({ userId }: { userId: string }) {
           </div>
         )}
         {current ? (
-          <SwipeCard key={current.id} title={current} leaving={leaving} onGesture={next} />
+          <SwipeCard key={current.id} title={current} leaving={leaving} onGesture={next} onDetails={() => setDetails(current)} />
         ) : (
           <div className="deck-empty">
             {loading ? (
@@ -155,6 +157,8 @@ export function Swipe({ userId }: { userId: string }) {
         </button>
       </div>
       <p className="hint center">Swipe til højre for "vil gerne", til venstre for "nej tak" og op for "har set den". Tryk to gange for superlike.</p>
+
+      {details && <DetailsSheet title={details} onClose={() => setDetails(null)} />}
 
       {rating && (
         <RatingDialog heading={`Du har set ${rating.metadata.title}`} onDone={finishSeen} onCancel={() => setRating(null)} />

@@ -12,6 +12,8 @@ interface Props {
   // Sættes af knapperne, så kortet flyver ud i samme retning som ved et swipe.
   leaving: Gesture | null
   onGesture: (g: Gesture) => void
+  // Åbner hele resuméet i et vindue, hvor det kan rulles, uden at kortet flytter sig.
+  onDetails: () => void
 }
 
 function direction(dx: number, dy: number): Gesture | null {
@@ -28,10 +30,9 @@ const LABELS: Record<Gesture, string> = {
   superlike: 'Superlike',
 }
 
-export function SwipeCard({ title, leaving, onGesture }: Props) {
+export function SwipeCard({ title, leaving, onGesture, onDetails }: Props) {
   const m = title.metadata
   const [drag, setDrag] = useState<{ x: number; y: number } | null>(null)
-  const [expanded, setExpanded] = useState(false)
   const start = useRef<{ x: number; y: number; id: number } | null>(null)
   const lastTap = useRef(0)
 
@@ -102,23 +103,30 @@ export function SwipeCard({ title, leaving, onGesture }: Props) {
           </a>
         )}
       </div>
-      {/* Udfoldet resumé kan rulles lodret; ellers går alle bevægelser til swipe. */}
-      <div className={`info${expanded ? ' scrollable' : ''}`}>
+      <div className="info">
         <h2>
           {m.title} {m.year && <span className="muted">({m.year})</span>}
         </h2>
+        <OriginalTitle metadata={m} />
         <p className="meta">
           {[typeLabel(m.media_type), length, m.genres.slice(0, 3).join(', ')].filter(Boolean).join(' · ')}
         </p>
         {m.overview && (
-          <p className={`overview${expanded ? ' expanded' : ''}`} onClick={() => setExpanded(!expanded)}>
-            {m.overview}
-          </p>
+          <>
+            <p className="overview">{m.overview}</p>
+            <button type="button" className="link read-more" onClick={onDetails}>Læs mere</button>
+          </>
         )}
         <Providers providers={m.providers} />
       </div>
     </div>
   )
+}
+
+// Den danske titel kan være svær at genkende (fx "I lovens navn" for "Law & Order"), så vis også originalen.
+export function OriginalTitle({ metadata: m }: { metadata: Title['metadata'] }) {
+  if (!m.original_title || m.original_title.toLowerCase() === m.title.toLowerCase()) return null
+  return <p className="original-title">{m.original_title}</p>
 }
 
 export function Providers({ providers }: { providers: Title['metadata']['providers'] }) {
