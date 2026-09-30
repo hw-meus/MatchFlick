@@ -48,5 +48,6 @@ Opgavebeskrivelsen ligger i `docs/opgavebeskrivelse.md`.
   Ashutosh Gowariker, Mira Nair, Yash Chopra og Aditya Chopra. Styres i `supabase/functions/tmdb/queue-config.ts`.
   Tages med, når køen bygges om i fase 3.
 - Siden *Set* (`#/set`) viser titler, begge har set, med begges vurdering og sæsoner. Man angiver sæsoner ved "har set den"
-  og kan rette dem med *Ret*. Forslag til sammenligning af sæsoner ("hvem er længst") er sendt til Meus og afventer svar.
+  og kan rette dem med *Ret*. Meus valgte forslag A og C: en linje i almindeligt sprog pr. serie (fx "I er lige langt.
+  Klar til sæson 4 sammen.") og en afdeling øverst, "Klar til at se sammen". Serier, som kun den ene har set, vises også.
 - Watch listen sorterer i fase 2 efter dato eller TMDB-bedømmelse. Sortering efter forventet fælles glæde kommer med modellen i fase 3.

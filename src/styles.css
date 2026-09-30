@@ -319,3 +319,7 @@ label.check input { width: 1.2rem; height: 1.2rem; accent-color: var(--accent); 
 .person .who { min-width: 4.5rem; font-weight: 600; }
 .person .seasons { font-size: 0.8rem; }
 .page-title { margin: 0 0 0.75rem; font-size: 1.2rem; }
+.comparison { margin: 0.1rem 0; font-weight: 600; font-size: 0.9rem; color: var(--super); }
+.section-title { margin: 1rem 0 0.25rem; font-size: 1rem; }
+.small { font-size: 0.85rem; margin: 0 0 0.6rem; }
+.ready .match { border: 1px solid var(--super); }

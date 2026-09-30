@@ -74,9 +74,10 @@ export interface SeenSwipe {
   created_at: string
 }
 
-// En titel, som begge har markeret som set, med hver persons swipe.
+// En titel, som begge har markeret som set, eller en serie, som kun den ene har set.
+// mine eller partner mangler, hvis den person ikke har markeret titlen som set.
 export interface SeenTogether {
   title: Title
-  mine: SeenSwipe
-  partner: SeenSwipe
+  mine?: SeenSwipe
+  partner?: SeenSwipe
 }

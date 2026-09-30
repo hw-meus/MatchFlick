@@ -124,7 +124,8 @@ export async function updateSeen(userId: string, titleId: string, rating: number
   if (error) throw error
 }
 
-// Titler, som både brugeren og partneren har markeret som "har set den".
+// Titler, som både brugeren og partneren har markeret som "har set den", og serier,
+// som kun den ene har set (så den anden kan indhente).
 export async function loadSeenTogether(userId: string, partnerId: string): Promise<SeenTogether[]> {
   const { data, error } = await supabase
     .from('swipes')
@@ -141,7 +142,7 @@ export async function loadSeenTogether(userId: string, partnerId: string): Promi
     else entry.partner = swipe
     byTitle.set(swipe.title_id, entry)
   }
-  return [...byTitle.values()].flatMap((e) => (e.mine && e.partner ? [{ title: e.title, mine: e.mine, partner: e.partner }] : []))
+  return [...byTitle.values()].filter((e) => (e.mine && e.partner) || e.title.media_type === 'tv')
 }
 
 const SNOOZE_DAYS = 30
