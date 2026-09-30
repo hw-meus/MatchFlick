@@ -44,7 +44,7 @@ Opgavebeskrivelsen ligger i `docs/opgavebeskrivelse.md`.
   Site URL https://hw-meus.github.io/MatchFlick/, og skabelonerne *Magic Link* og *Confirm signup* viser `{{ .Token }}` på dansk.
   Grænsen er 30 e-mails i timen. Supabase advarer om, at Gmail er beregnet til personlig e-mail; det er fint for to brugere.
 - Meus' ønsker til køen (fase 2, efter første afprøvning): partnerens likes skal vises hurtigt, ca. hvert fjerde kort dansk
-  (også ældre helt tilbage til 1953), indiske titler med gode bedømmelser engang imellem og film af Sanjay Leela Bhansali,
+  (også ældre helt tilbage til 1953), indiske titler (ca. hvert 20. kort i alt, gode bedømmelser) og film af Sanjay Leela Bhansali,
   Ashutosh Gowariker, Mira Nair, Yash Chopra og Aditya Chopra. Styres i `supabase/functions/tmdb/queue-config.ts`.
   Tages med, når køen bygges om i fase 3.
 - Watch listen sorterer i fase 2 efter dato eller TMDB-bedømmelse. Sortering efter forventet fælles glæde kommer med modellen i fase 3.

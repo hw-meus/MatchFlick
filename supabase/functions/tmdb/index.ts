@@ -299,6 +299,13 @@ function lookupDirectors(): Promise<number[]> {
   return directorIds
 }
 
+// Antal kort for en forventet andel, fx 0,6 kort → 1 kort med 60 % sandsynlighed, ellers 0.
+// Så passer andelen i gennemsnit, også når den er mindre end ét kort pr. portion.
+function cardsFor(expected: number): number {
+  const whole = Math.floor(expected)
+  return whole + (Math.random() < expected - whole ? 1 : 0)
+}
+
 // Fordeler kortene fra kilderne jævnt, så fx de indiske titler ikke kommer i klump.
 function spread(groups: Pick[][]): Pick[] {
   const slots = groups.flatMap((g) => g.map((item, i) => ({ item, at: (i + 0.5) / g.length })))
@@ -374,7 +381,7 @@ async function buildQueue(
   const remaining = BATCH_SIZE - partnerRefs.length
   const groups = new Map<SourceKey, Pick[]>()
   for (const source of SOURCES.filter((src) => src.key !== 'popular')) {
-    const wanted = Math.round(remaining * source.share)
+    const wanted = cardsFor(remaining * source.share)
     try {
       let params = paramsFor(source)
       if (source.key === 'directors') {

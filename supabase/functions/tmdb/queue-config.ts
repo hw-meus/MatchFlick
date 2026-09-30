@@ -3,7 +3,9 @@
 // Hver portion kort bygges sådan:
 //  1. Titler, som partneren har liket, og som brugeren ikke har swipet endnu, kommer først
 //     (højst PARTNER_LIKES_MAX pr. portion), så de ikke skal vente længe.
-//  2. Resten fyldes efter kilderne nedenfor. `share` er andelen af de resterende kort.
+//  2. Resten fyldes efter kilderne nedenfor. `share` er andelen af de resterende kort i
+//     gennemsnit: 0,05 betyder ca. hvert 20. kort. En andel, der ikke giver et helt kort i en
+//     portion, bliver til et kort med tilsvarende sandsynlighed.
 //     Giver en kilde færre titler end sin andel, fyldes der op med populære titler.
 //
 // Alle kilder følger brugerens filter for streamingtjenester. Uden filter kræves det,
@@ -30,7 +32,7 @@ export const SOURCES: Source[] = [
   {
     // Det, der er populært i Danmark lige nu.
     key: 'popular',
-    share: 0.55,
+    share: 0.68,
     types: ['movie', 'tv'],
     params: { 'vote_count.gte': '50' },
     requireStreaming: true,
@@ -55,9 +57,9 @@ export const SOURCES: Source[] = [
     requireStreaming: true,
   },
   {
-    // Højt bedømte indiske film og serier.
+    // Højt bedømte indiske film og serier. Sammen med "directors" ca. hvert 20. kort.
     key: 'indian',
-    share: 0.1,
+    share: 0.03,
     types: ['movie', 'tv'],
     params: { with_origin_country: 'IN', 'vote_average.gte': '7', 'vote_count.gte': '50' },
     requireStreaming: true,
@@ -65,7 +67,7 @@ export const SOURCES: Source[] = [
   {
     // Film af udvalgte instruktører (se DIRECTORS), sorteret efter bedømmelse.
     key: 'directors',
-    share: 0.08,
+    share: 0.02,
     types: ['movie'],
     params: { sort_by: 'vote_average.desc', 'vote_count.gte': '20' },
     requireStreaming: false,
