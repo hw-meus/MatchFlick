@@ -30,10 +30,15 @@ export function Swipe({ userId }: { userId: string }) {
     fetching.current = true
     setError(null)
     try {
-      const titles = await fetchQueue([...seen.current])
+      const { titles, partnerLiked } = await fetchQueue([...seen.current])
       const fresh = titles.filter((t) => !seen.current.has(t.id))
       fresh.forEach((t) => seen.current.add(t.id))
-      setQueue((q) => [...q, ...fresh])
+      // Titler, partneren har liket, lægges lige efter det kort, der vises nu, så de ikke
+      // skal vente bag resten af køen. Den øvrige portion lægges bagerst.
+      const liked = new Set(partnerLiked)
+      const soon = fresh.filter((t) => liked.has(t.id))
+      const later = fresh.filter((t) => !liked.has(t.id))
+      setQueue((q) => (q.length ? [q[0], ...soon, ...q.slice(1), ...later] : [...soon, ...later]))
       setEmpty(fresh.length === 0)
     } catch (e) {
       setError(danishError(e))

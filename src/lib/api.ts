@@ -15,9 +15,9 @@ async function invokeTmdb<T>(body: Record<string, unknown>): Promise<T> {
   return data as T
 }
 
-export async function fetchQueue(exclude: string[]): Promise<Title[]> {
-  const { titles } = await invokeTmdb<{ titles: Title[] }>({ action: 'queue', exclude })
-  return titles
+// partnerLiked er de titler i portionen, som partneren har liket, og som derfor skal vises snart.
+export async function fetchQueue(exclude: string[]): Promise<{ titles: Title[]; partnerLiked: string[] }> {
+  return invokeTmdb<{ titles: Title[]; partnerLiked: string[] }>({ action: 'queue', exclude })
 }
 
 export async function fetchProviders(): Promise<Provider[]> {

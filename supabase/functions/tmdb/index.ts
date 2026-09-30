@@ -2,22 +2,20 @@
 // når frontend. Titler caches i tabellen titles.
 //
 // Kaldes med POST og JSON { action, ... }:
-//   { action: "queue", exclude?: string[] }  → { titles: Title[] }  næste portion kort (populære i DK)
+//   { action: "queue", exclude?: string[] }  → { titles: Title[], partnerLiked: string[] }
+//                                              næste portion kort; sammensætningen står i queue-config.ts
 //   { action: "providers" }                  → { providers: Provider[] }  streamingtjenester i DK
 //
 // Kræver en gyldig brugersession (Authorization: Bearer <access token>).
 // Hemmeligheden TMDB_API_KEY kan være enten en v3-nøgle eller et v4 "read access token".
 
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2'
+import { BATCH_SIZE, DIRECTORS, PARTNER_LIKES_MAX, SOURCES, type Source, type SourceKey } from './queue-config.ts'
 
 const TMDB = 'https://api.themoviedb.org/3'
 const REGION = 'DK'
 const LANGUAGE = 'da-DK'
-const BATCH_SIZE = 20
-const MAX_PAGES = 15
-// Hvert DANISH_EVERY. kort er en dansk titel (dansk originalsprog), hvis der er nogen tilbage.
-const DANISH_EVERY = 4
-const DANISH_PER_BATCH = Math.floor(BATCH_SIZE / DANISH_EVERY)
+const MAX_PAGES = 10
 // Streamingoplysninger ændrer sig, så cachede titler genindlæses efter en uge.
 const STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000
 
@@ -247,15 +245,23 @@ interface DiscoverResult {
 
 type Pick = { type: MediaType; id: number; popularity: number }
 
-// Henter op til `wanted` titler fra discover (film og serier flettet efter popularitet),
+const DATE_FIELD: Record<MediaType, string> = { movie: 'primary_release_date', tv: 'first_air_date' }
+
+// Henter op til `wanted` titler fra discover (flettet på tværs af typerne efter popularitet),
 // som ikke står i `skip`. Valgte titler lægges i `skip`, så de ikke kommer med to gange.
-async function collect(params: Record<string, string>, wanted: number, skip: Set<string>): Promise<Pick[]> {
+async function collect(
+  types: MediaType[],
+  paramsFor: (t: MediaType) => Record<string, string>,
+  wanted: number,
+  skip: Set<string>,
+): Promise<Pick[]> {
   const picked: Pick[] = []
-  const done: Record<MediaType, boolean> = { movie: false, tv: false }
+  if (wanted <= 0) return picked
+  const done: Record<MediaType, boolean> = { movie: !types.includes('movie'), tv: !types.includes('tv') }
   for (let page = 1; page <= MAX_PAGES && picked.length < wanted && !(done.movie && done.tv); page++) {
-    const types = (['movie', 'tv'] as MediaType[]).filter((t) => !done[t])
+    const active = (['movie', 'tv'] as MediaType[]).filter((t) => !done[t])
     const pages = await Promise.all(
-      types.map((t) => tmdb<DiscoverResult>(`/discover/${t}`, { ...params, page: String(page) }).then((r) => ({ t, r }))),
+      active.map((t) => tmdb<DiscoverResult>(`/discover/${t}`, { ...paramsFor(t), page: String(page) }).then((r) => ({ t, r }))),
     )
     const round: Pick[] = []
     for (const { t, r } of pages) {
@@ -264,6 +270,7 @@ async function collect(params: Record<string, string>, wanted: number, skip: Set
         if (!skip.has(`${t}-${item.id}`)) round.push({ type: t, id: item.id, popularity: item.popularity })
       }
     }
+    // Inden for en kilde bevares TMDB's rækkefølge (fx bedømmelse), men typerne flettes.
     round.sort((a, b) => b.popularity - a.popularity)
     for (const item of round.slice(0, wanted - picked.length)) {
       skip.add(`${item.type}-${item.id}`)
@@ -273,13 +280,43 @@ async function collect(params: Record<string, string>, wanted: number, skip: Set
   return picked
 }
 
-async function buildQueue(admin: SupabaseClient, userId: string, exclude: string[]): Promise<TitleRow[]> {
-  const [profileRes, swipesRes, snoozedRes] = await Promise.all([
+// TMDB-id'er for instruktørerne i DIRECTORS. Slås op ved navn én gang pr. opstart af funktionen.
+let directorIds: Promise<number[]> | null = null
+
+function lookupDirectors(): Promise<number[]> {
+  directorIds ??= Promise.all(
+    DIRECTORS.map(async (name) => {
+      const res = await tmdb<{ results: { id: number; known_for_department?: string }[] }>('/search/person', { query: name })
+      const hit = res.results.find((p) => p.known_for_department === 'Directing') ?? res.results[0]
+      return hit?.id
+    }),
+  )
+    .then((ids) => ids.filter((id): id is number => typeof id === 'number'))
+    .catch((e) => {
+      directorIds = null
+      throw e
+    })
+  return directorIds
+}
+
+// Fordeler kortene fra kilderne jævnt, så fx de indiske titler ikke kommer i klump.
+function spread(groups: Pick[][]): Pick[] {
+  const slots = groups.flatMap((g) => g.map((item, i) => ({ item, at: (i + 0.5) / g.length })))
+  return slots.sort((a, b) => a.at - b.at).map((s) => s.item)
+}
+
+async function buildQueue(
+  admin: SupabaseClient,
+  userId: string,
+  exclude: string[],
+): Promise<{ titles: TitleRow[]; partnerLiked: string[] }> {
+  const [profileRes, swipesRes, snoozedRes, memberRes] = await Promise.all([
     admin.from('profiles').select('providers, filter_providers').eq('id', userId).maybeSingle(),
     admin.from('swipes').select('title_id').eq('user_id', userId),
     admin.from('snoozed').select('title_id').eq('user_id', userId).gt('until', new Date().toISOString()),
+    admin.from('couple_members').select('couple_id').eq('user_id', userId).maybeSingle(),
   ])
-  for (const r of [profileRes, swipesRes, snoozedRes]) if (r.error) throw new HttpError(500, r.error.message)
+  for (const r of [profileRes, swipesRes, snoozedRes, memberRes]) if (r.error) throw new HttpError(500, r.error.message)
 
   const skip = new Set<string>([
     ...exclude,
@@ -287,34 +324,91 @@ async function buildQueue(admin: SupabaseClient, userId: string, exclude: string
     ...(snoozedRes.data ?? []).map((s) => s.title_id as string),
   ])
 
+  // 1. Titler, partneren har liket, og som brugeren ikke har taget stilling til. Superlikes og
+  //    de ældste først, så intet bliver liggende længe. De vises uanset filteret for tjenester.
+  const partnerRefs: { type: MediaType; id: number }[] = []
+  if (memberRes.data) {
+    const { data: partners, error: partnersError } = await admin
+      .from('couple_members')
+      .select('user_id')
+      .eq('couple_id', memberRes.data.couple_id)
+      .neq('user_id', userId)
+    if (partnersError) throw new HttpError(500, partnersError.message)
+    if (partners.length) {
+      const { data: liked, error: likedError } = await admin
+        .from('swipes')
+        .select('title_id, action, created_at')
+        .in('user_id', partners.map((p) => p.user_id))
+        .in('action', ['like', 'superlike'])
+        .order('created_at', { ascending: true })
+      if (likedError) throw new HttpError(500, likedError.message)
+      const ordered = [...liked.filter((l) => l.action === 'superlike'), ...liked.filter((l) => l.action !== 'superlike')]
+      for (const l of ordered) {
+        const id = l.title_id as string
+        if (skip.has(id) || partnerRefs.length >= PARTNER_LIKES_MAX) continue
+        skip.add(id)
+        const [type, tmdbId] = id.split('-')
+        partnerRefs.push({ type: type as MediaType, id: Number(tmdbId) })
+      }
+    }
+  }
+
+  // 2. Resten efter kilderne i queue-config.ts.
   const providers: number[] = profileRes.data?.providers ?? []
-  const params: Record<string, string> = {
-    language: LANGUAGE,
-    watch_region: REGION,
-    sort_by: 'popularity.desc',
-    include_adult: 'false',
-    'vote_count.gte': '50',
-  }
-  if (profileRes.data?.filter_providers && providers.length) {
-    params.with_watch_providers = providers.join('|')
-  } else {
-    // Uden filter: alt, der kan streames i Danmark (abonnement, gratis eller med reklamer).
-    params.with_watch_monetization_types = 'flatrate|free|ads'
-  }
-
-  // TMDB's popularitet er global, så danske titler kommer sjældent med af sig selv.
-  // Derfor hentes de for sig og flettes ind, så ca. hvert fjerde kort er dansk.
-  const danish = await collect({ ...params, with_original_language: 'da', 'vote_count.gte': '5' }, DANISH_PER_BATCH, skip)
-  const popular = await collect(params, BATCH_SIZE - danish.length, skip)
-  const picked: Pick[] = []
-  while (picked.length < BATCH_SIZE && (danish.length || popular.length)) {
-    const next = (picked.length + 1) % DANISH_EVERY === 0 ? danish.shift() ?? popular.shift() : popular.shift() ?? danish.shift()
-    if (next) picked.push(next)
+  const filterProviders = Boolean(profileRes.data?.filter_providers && providers.length)
+  const paramsFor = (source: Source) => (t: MediaType): Record<string, string> => {
+    const p: Record<string, string> = {
+      language: LANGUAGE,
+      watch_region: REGION,
+      sort_by: 'popularity.desc',
+      include_adult: 'false',
+      ...source.params,
+    }
+    if (filterProviders) p.with_watch_providers = providers.join('|')
+    else if (source.requireStreaming) p.with_watch_monetization_types = 'flatrate|free|ads'
+    if (source.from) p[`${DATE_FIELD[t]}.gte`] = source.from
+    if (source.to) p[`${DATE_FIELD[t]}.lte`] = source.to
+    return p
   }
 
-  const refs = picked.slice(0, BATCH_SIZE)
+  const remaining = BATCH_SIZE - partnerRefs.length
+  const groups = new Map<SourceKey, Pick[]>()
+  for (const source of SOURCES.filter((src) => src.key !== 'popular')) {
+    const wanted = Math.round(remaining * source.share)
+    try {
+      let params = paramsFor(source)
+      if (source.key === 'directors') {
+        const ids = await lookupDirectors()
+        if (!ids.length) continue
+        const base = params
+        params = (t) => ({ ...base(t), with_crew: ids.join('|') })
+      }
+      groups.set(source.key, await collect(source.types, params, wanted, skip))
+    } catch (e) {
+      // En kilde, der fejler, må ikke vælte hele køen.
+      console.error(`Kilden ${source.key} fejlede:`, e instanceof Error ? e.message : e)
+    }
+  }
+  const popularSource = SOURCES.find((src) => src.key === 'popular')!
+  const special = [...groups.values()].reduce((n, g) => n + g.length, 0)
+  groups.set('popular', await collect(popularSource.types, paramsFor(popularSource), remaining - special, skip))
+
+  const partnerLiked = partnerRefs.map((r) => `${r.type}-${r.id}`)
+  const mixed = spread([...groups.values()])
+
+  // Partnerens likes lægges på hver anden plads fra starten.
+  const refs: { type: MediaType; id: number }[] = []
+  while (refs.length < BATCH_SIZE && (partnerRefs.length || mixed.length)) {
+    const takePartner = refs.length % 2 === 0 ? partnerRefs.length > 0 : mixed.length === 0
+    const next = takePartner ? partnerRefs.shift() : mixed.shift()
+    if (next) refs.push(next)
+  }
+
   const rows = await ensureTitles(admin, refs)
-  return refs.flatMap((r) => rows.get(`${r.type}-${r.id}`) ?? [])
+  return {
+    titles: refs.flatMap((r) => rows.get(`${r.type}-${r.id}`) ?? []),
+    partnerLiked,
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -337,7 +431,7 @@ Deno.serve(async (req) => {
     switch (body.action) {
       case 'queue': {
         const exclude = Array.isArray(body.exclude) ? body.exclude.filter((x: unknown) => typeof x === 'string') : []
-        return json({ titles: await buildQueue(admin, auth.user.id, exclude.slice(0, 500)) })
+        return json(await buildQueue(admin, auth.user.id, exclude.slice(0, 500)))
       }
       case 'providers':
         return json({ providers: await listProviders() })

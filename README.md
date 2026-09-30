@@ -44,6 +44,7 @@ Alt i Supabase ligger i mappen `supabase`:
 | --- | --- |
 | `migrations/` | Tabeller, Row Level Security, parkobling, matchtrigger og Realtime |
 | `functions/tmdb/` | Edge Function, som henter titler og streamingtjenester fra TMDB og cacher titler i tabellen `titles` |
+| `functions/tmdb/queue-config.ts` | Køens sammensætning: andele af populære, nyere og ældre danske, indiske titler og udvalgte instruktørers film |
 | `tests/rls_test.sql` | Test af RLS-reglerne og matchtriggeren |
 | `config.toml` | Indstillinger til Supabase CLI |
 
@@ -57,6 +58,15 @@ Alt i Supabase ligger i mappen `supabase`:
 - `matches`: udfyldes af triggeren `swipes_create_match`, når alle i parret har liket eller superliket samme titel. Status og vurderinger rettes af medlemmerne (vurderinger via `rate_match()`).
 
 En bruger kan kun læse og ændre data for sit eget par. Partnerens profil og swipes kan læses, men ikke ændres.
+
+### Køen
+
+Hver portion kort (12 ad gangen) bygges sådan:
+
+1. Titler, som partneren har liket, og som man ikke selv har taget stilling til, kommer først (superlikes og de ældste først). I appen lægges de lige efter det kort, man står ved.
+2. Resten blandes fra kilderne i `supabase/functions/tmdb/queue-config.ts`: populære titler i Danmark, nyere danske titler, danske titler fra 1953 til 1999, højt bedømte indiske titler og film af udvalgte instruktører. Andelene og instruktørerne kan ændres i filen; derefter skal funktionen udrulles igen.
+
+Titler, man har swipet, og titler sat til "ikke nu" (30 dage), kommer ikke igen.
 
 ### Udrulning
 
