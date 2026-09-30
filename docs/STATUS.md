@@ -47,4 +47,6 @@ Opgavebeskrivelsen ligger i `docs/opgavebeskrivelse.md`.
   (også ældre helt tilbage til 1953), indiske titler (ca. hvert 20. kort i alt, gode bedømmelser) og film af Sanjay Leela Bhansali,
   Ashutosh Gowariker, Mira Nair, Yash Chopra og Aditya Chopra. Styres i `supabase/functions/tmdb/queue-config.ts`.
   Tages med, når køen bygges om i fase 3.
+- Siden *Set* (`#/set`) viser titler, begge har set, med begges vurdering og sæsoner. Man angiver sæsoner ved "har set den"
+  og kan rette dem med *Ret*. Forslag til sammenligning af sæsoner ("hvem er længst") er sendt til Meus og afventer svar.
 - Watch listen sorterer i fase 2 efter dato eller TMDB-bedømmelse. Sortering efter forventet fælles glæde kommer med modellen i fase 3.

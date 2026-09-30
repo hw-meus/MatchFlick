@@ -1,6 +1,6 @@
 import { FunctionsHttpError } from '@supabase/supabase-js'
 import { supabase } from './supabase'
-import type { Couple, Match, Profile, Provider, SwipeAction, Title } from './types'
+import type { Couple, Match, Profile, Provider, SeasonsSeen, SeenSwipe, SeenTogether, SwipeAction, Title } from './types'
 
 async function invokeTmdb<T>(body: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase.functions.invoke('tmdb', { body })
@@ -93,15 +93,55 @@ export async function leaveCouple(): Promise<void> {
   if (error) throw error
 }
 
-export async function saveSwipe(userId: string, titleId: string, action: SwipeAction, rating?: number | null): Promise<void> {
+export async function saveSwipe(
+  userId: string,
+  titleId: string,
+  action: SwipeAction,
+  rating?: number | null,
+  seasons?: SeasonsSeen | null,
+): Promise<void> {
+  const seen = action === 'seen'
   const { error } = await supabase.from('swipes').upsert({
     user_id: userId,
     title_id: titleId,
     action,
-    rating: action === 'seen' ? rating ?? null : null,
+    rating: seen ? rating ?? null : null,
+    seasons_seen: seen && seasons?.seen.length ? seasons.seen : null,
+    all_seasons: seen && Boolean(seasons?.all),
     created_at: new Date().toISOString(),
   })
   if (error) throw error
+}
+
+// Retter vurdering og sæsoner på en titel, man allerede har markeret som set.
+export async function updateSeen(userId: string, titleId: string, rating: number | null, seasons: SeasonsSeen | null) {
+  const { error } = await supabase
+    .from('swipes')
+    .update({ rating, seasons_seen: seasons?.seen.length ? seasons.seen : null, all_seasons: Boolean(seasons?.all) })
+    .eq('user_id', userId)
+    .eq('title_id', titleId)
+    .eq('action', 'seen')
+  if (error) throw error
+}
+
+// Titler, som både brugeren og partneren har markeret som "har set den".
+export async function loadSeenTogether(userId: string, partnerId: string): Promise<SeenTogether[]> {
+  const { data, error } = await supabase
+    .from('swipes')
+    .select('user_id, title_id, rating, seasons_seen, all_seasons, created_at, titles(id, tmdb_id, media_type, metadata)')
+    .eq('action', 'seen')
+    .in('user_id', [userId, partnerId])
+  if (error) throw error
+
+  const rows = data as unknown as (SeenSwipe & { titles: Title })[]
+  const byTitle = new Map<string, { title: Title; mine?: SeenSwipe; partner?: SeenSwipe }>()
+  for (const { titles, ...swipe } of rows) {
+    const entry = byTitle.get(swipe.title_id) ?? { title: titles }
+    if (swipe.user_id === userId) entry.mine = swipe
+    else entry.partner = swipe
+    byTitle.set(swipe.title_id, entry)
+  }
+  return [...byTitle.values()].flatMap((e) => (e.mine && e.partner ? [{ title: e.title, mine: e.mine, partner: e.partner }] : []))
 }
 
 const SNOOZE_DAYS = 30

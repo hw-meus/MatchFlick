@@ -9,6 +9,7 @@ import { Login } from './pages/Login'
 import { CoupleSetup } from './pages/CoupleSetup'
 import { Swipe } from './pages/Swipe'
 import { Watchlist } from './pages/Watchlist'
+import { SeenTogether } from './pages/SeenTogether'
 import { Settings } from './pages/Settings'
 import { About } from './pages/About'
 
@@ -110,6 +111,8 @@ function LoggedIn({ userId, route }: { userId: string; route: string }) {
     content = <CoupleSetup onDone={reload} />
   } else if (route === '/watchlist') {
     content = <Watchlist userId={userId} couple={couple} version={matchVersion} />
+  } else if (route === '/set') {
+    content = <SeenTogether userId={userId} couple={couple} />
   } else if (route === '/indstillinger') {
     content = <Settings profile={profile} couple={couple} onChange={reload} />
   } else {
@@ -150,6 +153,7 @@ function Shell({ route, nav, children }: { route: string; nav?: boolean; childre
           <nav className="nav">
             {link('/', 'Swipe')}
             {link('/watchlist', 'Watch list')}
+            {link('/set', 'Set')}
             {link('/indstillinger', 'Indstillinger')}
             {link('/om', 'Om')}
           </nav>

@@ -5,7 +5,7 @@ import { DetailsSheet } from '../components/DetailsSheet'
 import { fetchQueue, saveSwipe, snooze } from '../lib/api'
 import { danishError } from '../lib/errors'
 import { imageUrl } from '../lib/tmdb'
-import type { Title } from '../lib/types'
+import type { SeasonsSeen, Title } from '../lib/types'
 
 type Choice = Gesture | 'snooze'
 
@@ -59,10 +59,10 @@ export function Swipe({ userId }: { userId: string }) {
   const current = queue[0]
 
   const record = useCallback(
-    async (title: Title, choice: Choice, stars: number | null = null) => {
+    async (title: Title, choice: Choice, stars: number | null = null, seasons: SeasonsSeen | null = null) => {
       try {
         if (choice === 'snooze') await snooze(userId, title.id)
-        else await saveSwipe(userId, title.id, choice, stars)
+        else await saveSwipe(userId, title.id, choice, stars, seasons)
       } catch (e) {
         setError(`Dit valg blev ikke gemt: ${danishError(e)}`)
       }
@@ -88,11 +88,11 @@ export function Swipe({ userId }: { userId: string }) {
     [current, leaving, record],
   )
 
-  function finishSeen(stars: number | null) {
+  function finishSeen(stars: number | null, seasons: SeasonsSeen | null) {
     const title = rating!
     setRating(null)
     setLeaving('seen')
-    record(title, 'seen', stars)
+    record(title, 'seen', stars, seasons)
     setTimeout(() => {
       setQueue((q) => q.slice(1))
       setLeaving(null)
@@ -166,7 +166,12 @@ export function Swipe({ userId }: { userId: string }) {
       {details && <DetailsSheet title={details} onClose={() => setDetails(null)} />}
 
       {rating && (
-        <RatingDialog heading={`Du har set ${rating.metadata.title}`} onDone={finishSeen} onCancel={() => setRating(null)} />
+        <RatingDialog
+          heading={`Du har set ${rating.metadata.title}`}
+          seasonCount={rating.media_type === 'tv' ? rating.metadata.seasons : null}
+          onDone={finishSeen}
+          onCancel={() => setRating(null)}
+        />
       )}
     </div>
   )

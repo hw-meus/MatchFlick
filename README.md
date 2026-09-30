@@ -53,7 +53,7 @@ Alt i Supabase ligger i mappen `supabase`:
 - `profiles`: visningsnavn, valgte streamingtjenester og om køen skal filtreres efter dem. Oprettes automatisk ved første login.
 - `couples` og `couple_members`: par med invitationskode og medlemmer. Et par har højst `max_members` (2) personer, og en bruger kan kun være i ét par. Oprettes med funktionerne `create_couple()` og `join_couple(code)`.
 - `titles`: TMDB-data som JSON. Id'et har formen `movie-603` eller `tv-1399`. Kun Edge Functionen skriver her.
-- `swipes`: én række pr. bruger og titel med handlingen `like`, `superlike`, `nope` eller `seen` og en valgfri vurdering.
+- `swipes`: én række pr. bruger og titel med handlingen `like`, `superlike`, `nope` eller `seen`, en valgfri vurdering og, for serier, hvilke sæsoner man har set (`seasons_seen`, `all_seasons`). Siden *Set* viser titler, som begge har markeret som set.
 - `snoozed`: titler sat til "ikke nu" med udløbstidspunkt (30 dage).
 - `matches`: udfyldes af triggeren `swipes_create_match`, når alle i parret har liket eller superliket samme titel. Status og vurderinger rettes af medlemmerne (vurderinger via `rate_match()`).
 

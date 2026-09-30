@@ -58,3 +58,25 @@ export interface Match {
   ratings: Record<string, number>
   titles: Title
 }
+
+// Hvilke sæsoner en bruger har set af en serie.
+export interface SeasonsSeen {
+  seen: number[]
+  all: boolean
+}
+
+export interface SeenSwipe {
+  user_id: string
+  title_id: string
+  rating: number | null
+  seasons_seen: number[] | null
+  all_seasons: boolean
+  created_at: string
+}
+
+// En titel, som begge har markeret som set, med hver persons swipe.
+export interface SeenTogether {
+  title: Title
+  mine: SeenSwipe
+  partner: SeenSwipe
+}
