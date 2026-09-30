@@ -41,6 +41,6 @@ Opgavebeskrivelsen ligger i `docs/opgavebeskrivelse.md`.
 - `SUPABASE_ACCESS_TOKEN` må (med Meus' accept) bruges til SQL via Management API og til `supabase functions deploy --use-api`.
   Tokenet mangler rettigheden `project_admin_write`, så login-indstillinger (e-mailskabeloner, kodelængde) skal Meus selv ændre.
 - Kodelængde (6) og Site URL er rettet af Meus. Supabase kræver egen SMTP for at ændre e-mailskabeloner på gratisniveau;
-  Meus opsætter Gmail-SMTP (smtp.gmail.com, port 587, app-adgangskode). Derefter skal skabelonerne *Magic Link* og *Confirm signup* skal vise `{{ .Token }}`
+  Meus opsætter Gmail-SMTP (smtp.gmail.com, port 587, app-adgangskode). Derefter skal skabelonerne *Magic Link* og *Confirm signup* vise `{{ .Token }}`
   i stedet for `{{ .ConfirmationURL }}`.
 - Watch listen sorterer i fase 2 efter dato eller TMDB-bedømmelse. Sortering efter forventet fælles glæde kommer med modellen i fase 3.
