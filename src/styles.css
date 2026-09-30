@@ -98,8 +98,15 @@ label.check input { width: 1.2rem; height: 1.2rem; accent-color: var(--accent); 
 /* Swipe */
 .deck {
   position: relative;
-  height: min(68dvh, 40rem);
+  /* Hele swipe-siden skal kunne være på skærmen uden at rulle. svh er højden med
+     browserens værktøjslinjer fremme, så intet gemmer sig bag dem. */
+  height: min(68vh, 40rem);
+  height: clamp(20rem, calc(100svh - 17.5rem), 42rem);
   margin-bottom: 1rem;
+}
+@media (max-height: 760px) {
+  .swipe .hint.center { display: none; }
+  .deck { height: clamp(20rem, calc(100svh - 14.5rem), 42rem); }
 }
 .deck-empty {
   height: 100%;
@@ -162,7 +169,7 @@ label.check input { width: 1.2rem; height: 1.2rem; accent-color: var(--accent); 
 .stamp-seen { color: var(--seen); }
 .stamp-superlike { color: var(--super); }
 
-.info { padding: 0.9rem 1rem 1rem; max-height: 55%; overflow-y: auto; }
+.info { flex: none; padding: 0.9rem 1rem 1.1rem; }
 .info h2 { margin: 0 0 0.25rem; font-size: 1.25rem; }
 .meta { margin: 0 0 0.5rem; color: var(--muted); font-size: 0.9rem; }
 .overview {
@@ -178,19 +185,40 @@ label.check input { width: 1.2rem; height: 1.2rem; accent-color: var(--accent); 
 .read-more { font-size: 0.9rem; margin-bottom: 0.5rem; }
 
 /* Hele resuméet i et vindue nedefra, som kan rulles */
-.sheet-backdrop { position: fixed; inset: 0; background: rgb(0 0 0 / 0.6); display: flex; align-items: flex-end; justify-content: center; z-index: 10; }
+/* Vinduet står fast øverst og er aldrig højere end den synlige skærm, så det rulles
+   inde i sig selv, og lukkeknappen altid kan ses. */
+.sheet-backdrop { position: fixed; inset: 0; background: rgb(0 0 0 / 0.7); z-index: 10; }
 .sheet {
-  background: var(--surface);
-  width: 100%;
+  position: fixed;
+  left: 0.75rem;
+  right: 0.75rem;
+  top: max(0.75rem, env(safe-area-inset-top));
   max-width: 32rem;
-  max-height: 85dvh;
+  margin: 0 auto;
+  max-height: calc(100vh - 1.5rem);
+  max-height: calc(100svh - 1.5rem - env(safe-area-inset-top));
   overflow-y: auto;
   overscroll-behavior: contain;
-  border-radius: 1rem 1rem 0 0;
-  padding: 1.25rem 1.25rem max(1.25rem, env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling: touch;
+  background: var(--surface);
+  border-radius: 1rem;
+  padding: 0 1.25rem 1.25rem;
+  z-index: 11;
 }
+.sheet-head {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.1rem 0 0.25rem;
+  background: var(--surface);
+}
+.sheet-head > div { flex: 1; min-width: 0; }
+.sheet-head .close { flex: none; width: 2.5rem; height: 2.5rem; padding: 0; border-radius: 999px; font-size: 1.1rem; }
 .sheet h2 { margin: 0 0 0.25rem; font-size: 1.25rem; }
 .sheet p { line-height: 1.5; }
+.sheet .providers { margin-bottom: 0.5rem; }
 .sheet .row { justify-content: space-between; margin-top: 1rem; }
 
 .providers { display: flex; flex-wrap: wrap; gap: 0.4rem; list-style: none; padding: 0; margin: 0.25rem 0 0; font-size: 0.85rem; }

@@ -15,6 +15,9 @@ const REGION = 'DK'
 const LANGUAGE = 'da-DK'
 const BATCH_SIZE = 20
 const MAX_PAGES = 15
+// Hvert DANISH_EVERY. kort er en dansk titel (dansk originalsprog), hvis der er nogen tilbage.
+const DANISH_EVERY = 4
+const DANISH_PER_BATCH = Math.floor(BATCH_SIZE / DANISH_EVERY)
 // Streamingoplysninger ændrer sig, så cachede titler genindlæses efter en uge.
 const STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000
 
@@ -242,6 +245,34 @@ interface DiscoverResult {
   results: { id: number; popularity: number }[]
 }
 
+type Pick = { type: MediaType; id: number; popularity: number }
+
+// Henter op til `wanted` titler fra discover (film og serier flettet efter popularitet),
+// som ikke står i `skip`. Valgte titler lægges i `skip`, så de ikke kommer med to gange.
+async function collect(params: Record<string, string>, wanted: number, skip: Set<string>): Promise<Pick[]> {
+  const picked: Pick[] = []
+  const done: Record<MediaType, boolean> = { movie: false, tv: false }
+  for (let page = 1; page <= MAX_PAGES && picked.length < wanted && !(done.movie && done.tv); page++) {
+    const types = (['movie', 'tv'] as MediaType[]).filter((t) => !done[t])
+    const pages = await Promise.all(
+      types.map((t) => tmdb<DiscoverResult>(`/discover/${t}`, { ...params, page: String(page) }).then((r) => ({ t, r }))),
+    )
+    const round: Pick[] = []
+    for (const { t, r } of pages) {
+      if (page >= r.total_pages) done[t] = true
+      for (const item of r.results) {
+        if (!skip.has(`${t}-${item.id}`)) round.push({ type: t, id: item.id, popularity: item.popularity })
+      }
+    }
+    round.sort((a, b) => b.popularity - a.popularity)
+    for (const item of round.slice(0, wanted - picked.length)) {
+      skip.add(`${item.type}-${item.id}`)
+      picked.push(item)
+    }
+  }
+  return picked
+}
+
 async function buildQueue(admin: SupabaseClient, userId: string, exclude: string[]): Promise<TitleRow[]> {
   const [profileRes, swipesRes, snoozedRes] = await Promise.all([
     admin.from('profiles').select('providers, filter_providers').eq('id', userId).maybeSingle(),
@@ -271,23 +302,14 @@ async function buildQueue(admin: SupabaseClient, userId: string, exclude: string
     params.with_watch_monetization_types = 'flatrate|free|ads'
   }
 
-  // Film og serier flettes, så køen har en blanding af begge.
-  const picked: { type: MediaType; id: number; popularity: number }[] = []
-  const done: Record<MediaType, boolean> = { movie: false, tv: false }
-  for (let page = 1; page <= MAX_PAGES && picked.length < BATCH_SIZE && !(done.movie && done.tv); page++) {
-    const types = (['movie', 'tv'] as MediaType[]).filter((t) => !done[t])
-    const pages = await Promise.all(
-      types.map((t) => tmdb<DiscoverResult>(`/discover/${t}`, { ...params, page: String(page) }).then((r) => ({ t, r }))),
-    )
-    const round: typeof picked = []
-    for (const { t, r } of pages) {
-      if (page >= r.total_pages) done[t] = true
-      for (const item of r.results) {
-        if (!skip.has(`${t}-${item.id}`)) round.push({ type: t, id: item.id, popularity: item.popularity })
-      }
-    }
-    round.sort((a, b) => b.popularity - a.popularity)
-    picked.push(...round)
+  // TMDB's popularitet er global, så danske titler kommer sjældent med af sig selv.
+  // Derfor hentes de for sig og flettes ind, så ca. hvert fjerde kort er dansk.
+  const danish = await collect({ ...params, with_original_language: 'da', 'vote_count.gte': '5' }, DANISH_PER_BATCH, skip)
+  const popular = await collect(params, BATCH_SIZE - danish.length, skip)
+  const picked: Pick[] = []
+  while (picked.length < BATCH_SIZE && (danish.length || popular.length)) {
+    const next = (picked.length + 1) % DANISH_EVERY === 0 ? danish.shift() ?? popular.shift() : popular.shift() ?? danish.shift()
+    if (next) picked.push(next)
   }
 
   const refs = picked.slice(0, BATCH_SIZE)
