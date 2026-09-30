@@ -20,6 +20,19 @@ export async function fetchQueue(exclude: string[]): Promise<{ titles: Title[]; 
   return invokeTmdb<{ titles: Title[]; partnerLiked: string[] }>({ action: 'queue', exclude })
 }
 
+export async function searchTitles(query: string): Promise<Title[]> {
+  const { titles } = await invokeTmdb<{ titles: Title[] }>({ action: 'search', query })
+  return titles
+}
+
+// Brugerens egne swipes på de givne titler, fx for at vise, hvad man allerede har svaret.
+export async function loadMySwipes(userId: string, titleIds: string[]): Promise<Map<string, SwipeAction>> {
+  if (!titleIds.length) return new Map()
+  const { data, error } = await supabase.from('swipes').select('title_id, action').eq('user_id', userId).in('title_id', titleIds)
+  if (error) throw error
+  return new Map(data.map((r) => [r.title_id as string, r.action as SwipeAction]))
+}
+
 export async function fetchProviders(): Promise<Provider[]> {
   const { providers } = await invokeTmdb<{ providers: Provider[] }>({ action: 'providers' })
   return providers

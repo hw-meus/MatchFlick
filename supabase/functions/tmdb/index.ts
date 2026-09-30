@@ -4,6 +4,7 @@
 // Kaldes med POST og JSON { action, ... }:
 //   { action: "queue", exclude?: string[] }  → { titles: Title[], partnerLiked: string[] }
 //                                              næste portion kort; sammensætningen står i queue-config.ts
+//   { action: "search", query: string }       → { titles: Title[] }  søgning efter film og serier
 //   { action: "providers" }                  → { providers: Provider[] }  streamingtjenester i DK
 //
 // Kræver en gyldig brugersession (Authorization: Bearer <access token>).
@@ -419,6 +420,27 @@ async function buildQueue(
 }
 
 // ---------------------------------------------------------------------------
+// Søgning efter en bestemt film eller serie
+// ---------------------------------------------------------------------------
+
+const SEARCH_LIMIT = 10
+
+async function search(admin: SupabaseClient, query: string): Promise<TitleRow[]> {
+  const res = await tmdb<{ results: { id: number; media_type: string; popularity: number }[] }>('/search/multi', {
+    query,
+    language: LANGUAGE,
+    include_adult: 'false',
+  })
+  const refs = res.results
+    .filter((r) => r.media_type === 'movie' || r.media_type === 'tv')
+    .slice(0, SEARCH_LIMIT)
+    .map((r) => ({ type: r.media_type as MediaType, id: r.id }))
+  // Titlerne caches, så man kan swipe på dem (swipes kræver, at titlen findes i titles).
+  const rows = await ensureTitles(admin, refs)
+  return refs.flatMap((r) => rows.get(`${r.type}-${r.id}`) ?? [])
+}
+
+// ---------------------------------------------------------------------------
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
@@ -439,6 +461,11 @@ Deno.serve(async (req) => {
       case 'queue': {
         const exclude = Array.isArray(body.exclude) ? body.exclude.filter((x: unknown) => typeof x === 'string') : []
         return json(await buildQueue(admin, auth.user.id, exclude.slice(0, 500)))
+      }
+      case 'search': {
+        const query = typeof body.query === 'string' ? body.query.trim().slice(0, 100) : ''
+        if (!query) throw new HttpError(400, 'Skriv, hvad du søger efter.')
+        return json({ titles: await search(admin, query) })
       }
       case 'providers':
         return json({ providers: await listProviders() })

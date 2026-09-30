@@ -50,4 +50,6 @@ Opgavebeskrivelsen ligger i `docs/opgavebeskrivelse.md`.
 - Siden *Set* (`#/set`) viser titler, begge har set, med begges vurdering og sæsoner. Man angiver sæsoner ved "har set den"
   og kan rette dem med *Ret*. Meus valgte forslag A og C: en linje i almindeligt sprog pr. serie (fx "I er lige langt.
   Klar til sæson 4 sammen.") og en afdeling øverst, "Klar til at se sammen". Serier, som kun den ene har set, vises også.
+- Siden *Søg* (`#/soeg`): søg efter en titel (TMDB `/search/multi`) og like eller superlike den, så partneren får den forrest i køen.
+  *Om* er flyttet fra menuen til et link nederst på siderne (ikke på swipe-siden, som skal passe til skærmen).
 - Watch listen sorterer i fase 2 efter dato eller TMDB-bedømmelse. Sortering efter forventet fælles glæde kommer med modellen i fase 3.

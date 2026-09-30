@@ -2,7 +2,8 @@
 //
 // Hver portion kort bygges sådan:
 //  1. Titler, som partneren har liket, og som brugeren ikke har swipet endnu, kommer først
-//     (højst PARTNER_LIKES_MAX pr. portion), så de ikke skal vente længe.
+//     (højst PARTNER_LIKES_MAX pr. portion), så de ikke skal vente længe. Det gælder også titler,
+//     partneren har fundet med søgningen og liket.
 //  2. Resten fyldes efter kilderne nedenfor. `share` er andelen af de resterende kort i
 //     gennemsnit: 0,05 betyder ca. hvert 20. kort. En andel, der ikke giver et helt kort i en
 //     portion, bliver til et kort med tilsvarende sandsynlighed.

@@ -68,6 +68,8 @@ Hver portion kort (12 ad gangen) bygges sådan:
 
 Titler, man har swipet, og titler sat til "ikke nu" (30 dage), kommer ikke igen.
 
+På siden *Søg* kan man finde en bestemt film eller serie og sige "vil gerne se" eller give en superlike. Titlen kommer så forrest i partnerens kø som alle andre likes.
+
 ### Udrulning
 
 Migrationer køres mod databasen, fx ved at indsætte filen i SQL-editoren i Supabase eller med Management API'et. Edge Functionen udrulles med Supabase CLI:

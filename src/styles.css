@@ -323,3 +323,8 @@ label.check input { width: 1.2rem; height: 1.2rem; accent-color: var(--accent); 
 .section-title { margin: 1rem 0 0.25rem; font-size: 1rem; }
 .small { font-size: 0.85rem; margin: 0 0 0.6rem; }
 .ready .match { border: 1px solid var(--super); }
+.status-line { margin: 0.1rem 0; font-size: 0.85rem; color: var(--muted); }
+.status-line.ok { color: var(--like); font-weight: 600; }
+.search-results { margin-top: 1rem; }
+button.on-like { border-color: var(--like); color: var(--like); opacity: 1; }
+button.on-super { border-color: var(--super); color: var(--super); opacity: 1; }

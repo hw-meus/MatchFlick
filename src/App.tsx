@@ -10,6 +10,7 @@ import { CoupleSetup } from './pages/CoupleSetup'
 import { Swipe } from './pages/Swipe'
 import { Watchlist } from './pages/Watchlist'
 import { SeenTogether } from './pages/SeenTogether'
+import { Search } from './pages/Search'
 import { Settings } from './pages/Settings'
 import { About } from './pages/About'
 
@@ -111,6 +112,8 @@ function LoggedIn({ userId, route }: { userId: string; route: string }) {
     content = <CoupleSetup onDone={reload} />
   } else if (route === '/watchlist') {
     content = <Watchlist userId={userId} couple={couple} version={matchVersion} />
+  } else if (route === '/soeg') {
+    content = <Search userId={userId} />
   } else if (route === '/set') {
     content = <SeenTogether userId={userId} couple={couple} />
   } else if (route === '/indstillinger') {
@@ -152,15 +155,16 @@ function Shell({ route, nav, children }: { route: string; nav?: boolean; childre
         {nav && (
           <nav className="nav">
             {link('/', 'Swipe')}
+            {link('/soeg', 'Søg')}
             {link('/watchlist', 'Watch list')}
             {link('/set', 'Set')}
             {link('/indstillinger', 'Indstillinger')}
-            {link('/om', 'Om')}
           </nav>
         )}
       </header>
       {children}
-      {!nav && route !== '/om' && (
+      {/* Om-siden med kildeangivelse til TMDB og JustWatch kan altid nås herfra. */}
+      {route !== '/om' && (!nav || route !== '/') && (
         <p className="footer"><a href="#/om">Om MatchFlick og kilder</a></p>
       )}
     </main>
